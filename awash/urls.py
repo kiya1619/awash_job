@@ -1,0 +1,17 @@
+from django.contrib import admin
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('register/', views.register, name='register'),
+    path('login/', views.login_user, name='login'),
+    path('logout/', views.logout_user, name='logout'),
+    path('employee_dashboard/', views.employee_dashboard, name='employee_dashboard'),
+    path('hr_dashboard/', views.hr_dashboard, name='hr_dashboard'),
+    path('post_job/', views.post_job, name='post_job'),
+    path('all_jobs/', views.all_jobs, name='all_jobs'),
+    path('view_detail/<int:id>', views.view_detail, name='view_detail'),
+    path("get-employee/", views.get_employee, name="get_employee"),  # new
+
+]

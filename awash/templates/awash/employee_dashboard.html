@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+  <h2 class="mb-4">Employee Dashboard</h2>
+
+  <div class="row">
+    <!-- Full Name -->
+    <div class="col-md-6">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Full Name</h5>
+          <p class="card-text">{{ employee.full_name }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Employee ID -->
+    <div class="col-md-6">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Employee ID</h5>
+          <p class="card-text">{{ employee.employee_id }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Department -->
+    <div class="col-md-6">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Department</h5>
+          <p class="card-text">{{ employee.department }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="col-md-6">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Email</h5>
+          <p class="card-text">{{ employee.email }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone -->
+    <div class="col-md-6">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Phone</h5>
+          <p class="card-text">{{ employee.phone }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Button -->
+  <a href="#" class="btn btn-primary mt-3">Edit Profile</a>
+</div>
+{% endblock %}

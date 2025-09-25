@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    {% if job %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{{ job.title }}</h4>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Vacancy Number:</strong> {{ job.vacancy_number }}</li>
+                <li class="list-group-item"><strong>Posted Date:</strong> {{ job.posted_date|date:"M d, Y H:i" }}</li>
+                <li class="list-group-item"><strong>Deadline:</strong> {{ job.deadline|date:"M d, Y" }}</li>
+                <li class="list-group-item"><strong>Status:</strong> 
+                    {% if job.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </li>
+                {% if job.job_description %}
+                <li class="list-group-item"><strong>Job Description:</strong> {{ job.job_description }}</li>
+                {% endif %}
+                {% if job.qualification %}
+                <li class="list-group-item"><strong>Qualification:</strong> {{ job.qualification }}</li>
+                {% endif %}
+                {% if job.experience %}
+                <li class="list-group-item"><strong>Experience:</strong> {{ job.experience }}</li>
+                {% endif %}
+                {% if job.employment_type %}
+                <li class="list-group-item"><strong>Employment Type:</strong> {{ job.employment_type }}</li>
+                {% endif %}
+                {% if job.job_category %}
+                <li class="list-group-item"><strong>Job Category:</strong> {{ job.job_category }}</li>
+                {% endif %}
+                {% if job.duty_station %}
+                <li class="list-group-item"><strong>Duty Station:</strong> {{ job.duty_station }}</li>
+                {% endif %}
+                {% if job.job_grade %}
+                <li class="list-group-item"><strong>Job Grade:</strong> {{ job.job_grade }}</li>
+                {% endif %}
+                {% if job.vacancy_type %}
+                <li class="list-group-item"><strong>Vacancy Type:</strong> {{ job.vacancy_type }}</li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'all_jobs' %}" class="btn btn-secondary">Back to Jobs</a>
+            {% if not request.user.is_staff %}
+            <a href="#" class="btn btn-success">Apply Now</a>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center">
+        Job not found.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
