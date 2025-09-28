@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* Base styling */
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    background-color: #f8f9fa;
+    color: #333;
+  }
+
+  .card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-header {
+    background: linear-gradient(90deg, #4a90e2, #50e3c2);
+    color: #fff;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    font-weight: 600;
+    font-size: 1.25rem;
+    text-align: center;
+    padding: 1.2rem;
+  }
+
+  .list-group-item {
+    border: none;
+    padding: 0.75rem 1.25rem;
+    background-color: #fff;
+    transition: background 0.3s;
+  }
+
+  .list-group-item:hover {
+    background-color: #f1f7ff;
+  }
+
+  .list-group-item strong {
+    color: #4a90e2;
+  }
+
+  form {
+    margin-top: 2rem;
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #555;
+  }
+
+  .form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    transition: all 0.3s;
+  }
+
+  .form-control:focus {
+    border-color: #50e3c2;
+    box-shadow: 0 0 0 0.2rem rgba(80, 227, 194, 0.25);
+  }
+
+  .btn-success {
+    background-color: #50e3c2;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+
+  .btn-success:hover {
+    background-color: #3acaa8;
+  }
+
+  .btn-secondary {
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+  }
+
+  .text-end {
+    margin-top: 1rem;
+  }
+
+  h4.mb-0 {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  @media (max-width: 576px) {
+    .card {
+      margin: 1rem;
+    }
+  }
+</style>
+
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            Apply for: {{ job.title }}
+        </div>
+        <div class="card-body">
+            <!-- Job Info -->
+            <ul class="list-group list-group-flush mb-4">
+                <li class="list-group-item"><strong>Vacancy Number:</strong> {{ job.vacancy_number }}</li>
+                <li class="list-group-item"><strong>Posted Date:</strong> {{ job.posted_date|date:"M d, Y H:i" }}</li>
+                <li class="list-group-item"><strong>Deadline:</strong> {{ job.deadline|date:"M d, Y" }}</li>
+                <li class="list-group-item"><strong>Employment Type:</strong> {{ job.employment_type }}</li>
+                <li class="list-group-item"><strong>Duty Station:</strong> {{ job.duty_station }}</li>
+                <li class="list-group-item"><strong>Job Grade:</strong> {{ job.job_grade }}</li>
+                {% if job.description %}
+                <li class="list-group-item"><strong>Job Description:</strong><br> {{ job.description }}</li>
+                {% else %}
+                <li class="list-group-item"><strong>Job Description:</strong><br>-</li>
+                {% endif %}
+                <li class="list-group-item"><strong>Qualification:</strong><br> {{ job.qualification }}</li>
+                <li class="list-group-item"><strong>Experience:</strong> {{ job.experience }}</li>
+            </ul>
+
+            <!-- Application Form -->
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="recommendation_letter" class="form-label"><strong>Recommendation Letter (Optional):</strong></label>
+                    <input type="file" name="recommendation_letter" id="recommendation_letter" class="form-control">
+                    <small class="text-muted">Upload a PDF, DOCX, or image file.</small>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success">Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

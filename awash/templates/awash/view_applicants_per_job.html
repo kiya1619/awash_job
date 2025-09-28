@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="mb-4">
+        Applicants for Job: {{ job.title }} ({{ job.vacancy_number }})
+    </h3>
+
+    <!-- Export Button -->
+    <div class="mb-3">
+        <button class="btn btn-success" id="exportBtn">Export to CSV</button>
+    </div>
+
+    <!-- Search Filter -->
+    <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search applicants by name, ID, or email">
+
+    <div class="table-responsive">
+        <table id="applicantsTable" class="table table-striped table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Recommendation Letter</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td>{{ app.employee.employee_id }}</td>
+                    <td>{{ app.employee.full_name }}</td>
+                    <td>{{ app.employee.email }}</td>
+                    <td>{{ app.employee.phone }}</td>
+<td>
+    {% if app.recommendation_letter %}
+        <a href="{{ app.recommendation_letter.url }}" target="_blank">View / Download</a>
+    {% else %}
+        -
+    {% endif %}
+</td>                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No applicants found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('searchInput');
+    const table = document.getElementById('applicantsTable');
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+
+    // Pass Django variable to JS
+    const vacancyNumber = "{{ job.vacancy_number }}";
+
+    input.addEventListener('input', function() {
+        const filter = input.value.toLowerCase();
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+
+    const exportBtn = document.getElementById('exportBtn');
+    exportBtn.addEventListener('click', function() {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText);
+        csvContent += headers.join(",") + "\r\n";
+
+        rows.forEach(row => {
+            if (row.style.display !== "none") { // export only visible rows
+                const cells = Array.from(row.querySelectorAll('td')).map(td => `"${td.innerText}"`);
+                csvContent += cells.join(",") + "\r\n";
+            }
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `applicants_${vacancyNumber}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+});
+</script>
+
+{% endblock %}

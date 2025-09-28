@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+  body {
+    font-family: Arial, sans-serif !important;
+    font-style: normal !important;
+  }
+
+  .card-title, .card-text {
+    font-style: normal !important;
+  }
+
+</style>
 <div class="container mt-5">
     {% if job %}
     <div class="card shadow-sm">
@@ -48,7 +59,7 @@
         <div class="card-footer text-end">
             <a href="{% url 'all_jobs' %}" class="btn btn-secondary">Back to Jobs</a>
             {% if not request.user.is_staff %}
-            <a href="#" class="btn btn-success">Apply Now</a>
+            <a href="{% url 'apply' job.id %}" class="btn btn-success">Apply Now</a>
             {% endif %}
         </div>
     </div>

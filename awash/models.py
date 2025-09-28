@@ -53,3 +53,19 @@ class Job(models.Model):
             Job.objects.filter(pk=self.pk).update(vacancy_number=self.vacancy_number)  # Step 3
         else:
             super().save(*args, **kwargs)
+            
+            
+
+class Application(models.Model):
+    employee = models.ForeignKey("Employee", on_delete=models.CASCADE, related_name="applications")
+    job = models.ForeignKey("Job", on_delete=models.CASCADE, related_name="applications")
+    applied_at = models.DateTimeField(default=timezone.now)
+    recommendation_letter = models.FileField(upload_to="recommendations/", blank=True, null=True)
+
+    class Meta:
+        unique_together = ('employee', 'job')  # Prevent duplicate applications
+        ordering = ['-applied_at']
+
+    def __str__(self):
+        return f"{self.employee.full_name} → {self.job.title}"
+    

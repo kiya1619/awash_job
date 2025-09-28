@@ -1,8 +1,8 @@
 # accounts/views.py
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from django.shortcuts import render, redirect
-from awash.models import Employee, Job
+from django.shortcuts import render, redirect, get_object_or_404
+from awash.models import Employee, Job, Application
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -118,12 +118,14 @@ def hr_dashboard(request):
     active_jobs = Job.objects.filter(is_active=True).count()
     inactive_jobs = Job.objects.filter(is_active=False).count()
     recent_jobs = Job.objects.all().order_by("-posted_date")[:5]
+    total_applications = Application.objects.count()
     context = {
         "employees": employees,
         "job": job,
         "active_jobs": active_jobs,
         "inactive_jobs": inactive_jobs,
         "recent_jobs": recent_jobs,
+        "total_applications": total_applications,
     }
     return render(request, "awash/hr_dashboard.html", context)
 
@@ -178,3 +180,113 @@ def view_detail(request, id):
         job = None  # or handle the error
 
     return render(request, "awash/view_detail.html", {"job": job})
+
+
+def apply(request, id):
+    job = get_object_or_404(Job, id=id)
+
+    if request.method == "POST":
+        employee = Employee.objects.get(user=request.user)  # assuming logged-in employee
+        recommendation_letter = request.FILES.get("recommendation_letter")
+
+        application, created = Application.objects.get_or_create(
+            employee=employee,
+            job=job,
+            defaults={"recommendation_letter": recommendation_letter}
+        )
+
+        if not created:
+            messages.warning(request, "You have already applied for this job.")
+        else:
+            messages.success(request, f"Application submitted for {job.title}!")
+
+        return redirect("all_jobs")  # redirect to job list
+
+    return render(request, "awash/apply.html", {"job": job})
+
+
+def applicants_list(request):
+    jobs = Job.objects.all().order_by("-posted_date")
+
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to view this page.")
+        return redirect("login")
+
+    applications = Application.objects.select_related("employee", "job").all()
+    
+    context = {
+        "jobs": jobs,
+        "applications": applications,
+    }
+    return render(request, "awash/applicants.html", context) 
+
+def view_applicants_per_job(request, id):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to view this page.")
+        return redirect("login")
+
+    job = get_object_or_404(Job, id=id)
+    applications = Application.objects.filter(job=job).select_related("employee")
+
+    context = {
+        "job": job,
+        "applications": applications,
+    }
+    return render(request, "awash/view_applicants_per_job.html", context)
+
+
+def my_applications(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    try:
+        employee = Employee.objects.get(user=request.user)
+    except Employee.DoesNotExist:
+        messages.error(request, "Employee profile not found.")
+        return redirect("employee_dashboard")
+
+    applications = Application.objects.filter(employee=employee).select_related("job").order_by("-applied_at")
+
+    return render(request, "awash/my_applications.html", {"applications": applications})
+
+
+def delete_job(request, id):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to perform this action.")
+        return redirect("login")
+
+    job = get_object_or_404(Job, id=id)
+    job_title = job.title
+    job.delete()
+    messages.success(request, f"Job '{job_title}' has been deleted successfully.")
+    return redirect("all_jobs")
+
+
+def edit_job(request, id):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to perform this action.")
+        return redirect("login")
+
+    job = get_object_or_404(Job, id=id)
+
+    if request.method == "POST":
+        # Basic fields
+        job.title = request.POST.get("title")
+        job.deadline = request.POST.get("deadline")
+        job.is_active = request.POST.get("is_active") == "on"
+
+        # New fields
+        job.description = request.POST.get("description")
+        job.qualification = request.POST.get("qualification")
+        job.experience = request.POST.get("experience")
+        job.employment_type = request.POST.get("employment_type")
+        job.job_category = request.POST.get("job_category")
+        job.duty_station = request.POST.get("duty_station")
+        job.job_grade = request.POST.get("job_grade")
+        job.vacancy_type = request.POST.get("vacancy_type")
+
+        job.save()
+        messages.success(request, f"Job '{job.title}' updated successfully.")
+        return redirect("all_jobs")
+
+    return render(request, "awash/edit_job.html", {"job": job})

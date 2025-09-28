@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  body {
+    font-family: Arial, sans-serif !important;
+    font-style: normal !important;
+  }
+
+  .card-title, .card-text {
+    font-style: normal !important;
+  }
+</style>
+<div class="container py-5">
+    <h2 class="mb-4 text-center">My Job Applications</h2>
+
+    {% if applications %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Vacancy No</th>
+                    <th>Job Title</th>
+                    <th>Applied On</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Recommendation Letter</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td>{{ app.job.vacancy_number }}</td>
+                    <td>{{ app.job.title }}</td>
+                    <td>{{ app.applied_at|date:"M d, Y H:i" }}</td>
+                    <td>{{ app.job.deadline|date:"M d, Y" }}</td>
+                    <td>
+                        {% if app.job.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Closed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if app.recommendation_letter %}
+                        <a href="{{ app.recommendation_letter.url }}" target="_blank">View / Download</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        You have not applied for any jobs yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

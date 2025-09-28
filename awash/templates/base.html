@@ -27,18 +27,18 @@
     <a href="{% url 'hr_dashboard' %}" class="{% if request.resolver_match.url_name == 'hr_dashboard' %}active{% endif %}">Home</a>
     <a href="{% url 'post_job' %}" class="{% if request.resolver_match.url_name == 'post_job' %}active{% endif %}">Post Job</a>
     <a href="{% url 'all_jobs' %}" class="{% if request.resolver_match.url_name == 'all_jobs' %}active{% endif %}">All Jobs</a>
-    <a href="" class="{% if request.resolver_match.url_name == 'applicants' %}active{% endif %}">Applicants</a>
+    <a href="{% url 'applicants' %}" class="{% if request.resolver_match.url_name == 'applicants' %}active{% endif %}">Applicants</a>
     <a href="" class="{% if request.resolver_match.url_name == 'hr_settings' %}active{% endif %}">Settings</a>
   {% else %}
     <!-- Employee Links -->
     <a href="{% url 'employee_dashboard' %}" class="{% if request.resolver_match.url_name == 'employee_dashboard' %}active{% endif %}">Home</a>
     <a href="" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">Profile</a>
     <a href="{% url 'all_jobs' %}" class="{% if request.resolver_match.url_name == 'job_search' %}active{% endif %}">Job List</a>
-    <a href="" class="{% if request.resolver_match.url_name == 'applied_jobs' %}active{% endif %}">Applied Jobs</a>
+    <a href="{% url 'my_applications' %}" class="{% if request.resolver_match.url_name == 'applied_jobs' %}active{% endif %}">My Applications</a>
     <a href="" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">Settings</a>
   {% endif %}
 
-  <a href="{% url 'logout' %}">Logout{% if request.user.is_staff %} <i>( {{ request.user }}) </i> {% else %} <i>( {{ request.user.employee.full_name}}) {% endif %} </a>
+  <a href="{% url 'logout' %}">Logout{% if request.user.is_staff %} <i>( ADMIN ) </i> {% else %} <i>( {{ request.user.employee.full_name}}) {% endif %} </a>
 </div>
 
 
