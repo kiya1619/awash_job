@@ -28,11 +28,12 @@
     <a href="{% url 'post_job' %}" class="{% if request.resolver_match.url_name == 'post_job' %}active{% endif %}">Post Job</a>
     <a href="{% url 'all_jobs' %}" class="{% if request.resolver_match.url_name == 'all_jobs' %}active{% endif %}">All Jobs</a>
     <a href="{% url 'applicants' %}" class="{% if request.resolver_match.url_name == 'applicants' %}active{% endif %}">Applicants</a>
+    <a href="{% url 'promotion' %}" class="{% if request.resolver_match.url_name == 'promotion' %}active{% endif %}">Promotion</a>
+    <a href="{% url 'promotion_list' %}" class="{% if request.resolver_match.url_name == 'promotion_list' %}active{% endif %}">Promotion List</a>
     <a href="" class="{% if request.resolver_match.url_name == 'hr_settings' %}active{% endif %}">Settings</a>
   {% else %}
     <!-- Employee Links -->
     <a href="{% url 'employee_dashboard' %}" class="{% if request.resolver_match.url_name == 'employee_dashboard' %}active{% endif %}">Home</a>
-    <a href="" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">Profile</a>
     <a href="{% url 'all_jobs' %}" class="{% if request.resolver_match.url_name == 'job_search' %}active{% endif %}">Job List</a>
     <a href="{% url 'my_applications' %}" class="{% if request.resolver_match.url_name == 'applied_jobs' %}active{% endif %}">My Applications</a>
     <a href="" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">Settings</a>

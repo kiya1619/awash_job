@@ -33,11 +33,18 @@
               <div class="form-text">Fetched automatically based on Employee ID.</div>
             </div>
 
-            <!-- Department -->
-            <div class="mb-3">
-              <label for="department" class="form-label">Department</label>
-              <input type="text" class="form-control" id="department" name="department" readonly>
-            </div>
+            <!-- position -->
+          <div class="mb-3">
+          <label for="position" class="form-label">Current Position</label>
+          <select class="form-select" id="position" name="position" required>
+            <option value="">-- Select Position --</option>
+            {% for position in positions %}
+              <option value="{{ position }}">{{ position }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+
 
             <!-- Email -->
             <div class="mb-3">
@@ -85,16 +92,25 @@
 </div>
 
 <!-- Optional JS -->
+ <script>
+  $(document).ready(function() {
+    $('#department').select2({
+      placeholder: "-- Select Position --",
+      allowClear: true
+    });
+  });
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-document.getElementById("employee_id").addEventListener("blur", function(){
+document.getElementById("employee_id").addEventListener("blur", function() {
     let empId = this.value;
     if(empId){
         fetch(`/get-employee/?employee_id=${empId}`)
         .then(response => response.json())
         .then(data => {
             const fullNameInput = document.getElementById("full_name");
-            const deptInput = document.getElementById("department");
+            const positionSelect = document.getElementById("position"); // corrected
             const emailInput = document.getElementById("email");
             const registerBtn = document.querySelector("button[type='submit']");
             const password1 = document.getElementById("password1");
@@ -102,7 +118,7 @@ document.getElementById("employee_id").addEventListener("blur", function(){
 
             if(data.error === "not_found"){
                 fullNameInput.value = "";
-                deptInput.value = "";
+                positionSelect.value = "";
                 emailInput.value = "";
                 alert("Employee not found. Please contact HR.");
                 registerBtn.disabled = true;
@@ -110,7 +126,7 @@ document.getElementById("employee_id").addEventListener("blur", function(){
                 password2.disabled = true;
             } else {
                 fullNameInput.value = data.full_name;
-                deptInput.value = data.department;
+                positionSelect.value = data.department; // auto-selects the position
                 emailInput.value = data.email;
 
                 if(data.is_registered){
@@ -130,6 +146,7 @@ document.getElementById("employee_id").addEventListener("blur", function(){
         .catch(err => console.error(err));
     }
 });
+
 </script>
 
 

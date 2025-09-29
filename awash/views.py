@@ -2,10 +2,16 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, redirect, get_object_or_404
-from awash.models import Employee, Job, Application
+from awash.models import Employee, Job, Application, Promotion
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from awash.utils.position_list import POSITION_LIST  # Import the position list
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from datetime import timedelta
+from django.utils import timezone
+
 def get_employee(request):
     emp_id = request.GET.get("employee_id")
     try:
@@ -30,6 +36,7 @@ def register(request):
         password1 = request.POST.get("password1")
         password2 = request.POST.get("password2")
         phone = request.POST.get("phone")
+        position = request.POST.get("position")
 
         # Check password match
         if password1 != password2:
@@ -68,11 +75,10 @@ def register(request):
         employee.save()
 
         return redirect("login")
+    context = {"positions": POSITION_LIST}
 
-    return render(request, "awash/register.html")
-from django.contrib.auth import authenticate, login
-from django.shortcuts import redirect, render
-from django.contrib import messages
+    return render(request, "awash/register.html", context)
+
 
 def login_user(request):
     if request.method == "POST":
@@ -114,21 +120,35 @@ def hr_dashboard(request):
         return redirect("login")
 
     employees = Employee.objects.all()
-    job = Job.objects.all()
+    jobs = Job.objects.all()
     active_jobs = Job.objects.filter(is_active=True).count()
     inactive_jobs = Job.objects.filter(is_active=False).count()
     recent_jobs = Job.objects.all().order_by("-posted_date")[:5]
     total_applications = Application.objects.count()
+
+    # Promotion stats
+    today = timezone.now().date()
+    one_year_ago = today - timedelta(days=365)
+    six_months_ago = today - timedelta(days=182)  # approx
+    three_months_ago = today - timedelta(days=91)  # approx
+
+    promotions = Promotion.objects.all()
+    promoted_this_year = promotions.filter(promoted_at__gte=one_year_ago).count()
+    promoted_last_6_months = promotions.filter(promoted_at__gte=six_months_ago).count()
+    promoted_last_3_months = promotions.filter(promoted_at__gte=three_months_ago).count()
+
     context = {
         "employees": employees,
-        "job": job,
+        "job": jobs,
         "active_jobs": active_jobs,
         "inactive_jobs": inactive_jobs,
         "recent_jobs": recent_jobs,
         "total_applications": total_applications,
+        "promoted_this_year": promoted_this_year,
+        "promoted_last_6_months": promoted_last_6_months,
+        "promoted_last_3_months": promoted_last_3_months,
     }
     return render(request, "awash/hr_dashboard.html", context)
-
 
 def post_job(request):
     if request.method == "POST":
@@ -172,7 +192,18 @@ def post_job(request):
 
 def all_jobs(request):
     jobs = Job.objects.all().order_by("-posted_date")
-    return render(request, "awash/all_jobs.html", {"jobs": jobs})
+    applied_job_ids = []
+    if request.user.is_authenticated:
+        try:
+            employee = request.user.employee  # Assuming OneToOne link
+            applied_job_ids = Application.objects.filter(employee=employee).values_list('job_id', flat=True)
+        except Employee.DoesNotExist:
+            applied_job_ids = []
+    context = {
+        "jobs": jobs,
+        "applied_job_ids": applied_job_ids
+    }
+    return render(request, "awash/all_jobs.html", context)
 def view_detail(request, id):
     try:
         job = Job.objects.get(id=id)
@@ -184,9 +215,14 @@ def view_detail(request, id):
 
 def apply(request, id):
     job = get_object_or_404(Job, id=id)
+    employee = Employee.objects.get(user=request.user)  # logged-in employee
+
+    # 🔹 Check promotion eligibility before applying
+    if not employee.can_apply():
+        messages.error(request, "You cannot apply for this job because you were promoted within the last year.")
+        return redirect("all_jobs")  # or job detail page
 
     if request.method == "POST":
-        employee = Employee.objects.get(user=request.user)  # assuming logged-in employee
         recommendation_letter = request.FILES.get("recommendation_letter")
 
         application, created = Application.objects.get_or_create(
@@ -203,7 +239,6 @@ def apply(request, id):
         return redirect("all_jobs")  # redirect to job list
 
     return render(request, "awash/apply.html", {"job": job})
-
 
 def applicants_list(request):
     jobs = Job.objects.all().order_by("-posted_date")
@@ -290,3 +325,76 @@ def edit_job(request, id):
         return redirect("all_jobs")
 
     return render(request, "awash/edit_job.html", {"job": job})
+
+
+def all_users(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to view this page.")
+        return redirect("login")
+
+    employees = Employee.objects.select_related("user").all().order_by("full_name")
+    user = User.objects.all()
+    context = {
+        "employees": employees,
+        "user": user,
+    }
+    return render(request, "awash/users.html", context)
+
+def delete_user(request, id):
+    User_to_delete = get_object_or_404(User, id=id)
+    User_to_delete.delete()
+    messages.success(request, f"User '{User_to_delete.username}' has been deleted successfully.")
+
+    return redirect("users")
+
+
+def promotion(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to perform this action.")
+        return redirect("login")
+
+    if request.method == "POST":
+        employee_id = request.POST.get("employee")       # matches form name
+        new_position = request.POST.get("new_position")
+        promotion_date = request.POST.get("promoted_at") # matches form name
+        remarks = request.POST.get("remarks", "")
+
+        try:
+            employee = Employee.objects.get(id=employee_id)
+        except Employee.DoesNotExist:
+            messages.error(request, "Employee not found.")
+            return redirect("promotion")
+
+        # Check eligibility
+        if not employee.can_apply():
+            messages.error(request, f"Employee {employee.full_name} is not eligible for promotion (promoted within last year).")
+            return redirect("promotion")
+
+        # Record the promotion
+        Promotion.objects.create(
+            employee=employee,
+            new_grade=new_position,
+            promoted_at=promotion_date,
+            remarks=remarks
+        )
+
+        # Update employee details
+        employee.last_promotion_date = promotion_date
+        employee.save(update_fields=["last_promotion_date"])
+
+        messages.success(request, f"Employee {employee.full_name} promoted to {new_position} successfully.")
+        return redirect("promotion")
+
+    employees = Employee.objects.all().order_by("full_name")
+    context = {
+        "employees": employees,
+        "positions": POSITION_LIST
+    }
+    return render(request, "awash/promotion.html", context)
+def promotion_list(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to view this page.")
+        return redirect("login")
+
+    promotions = Promotion.objects.select_related("employee").order_by("-promoted_at")
+    return render(request, "awash/promotion_list.html", {"promotions": promotions})
