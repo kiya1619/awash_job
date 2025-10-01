@@ -3,7 +3,11 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 # Create your models here.
-
+class Allemployee_record(models.Model):
+    employee_id = models.CharField(max_length=50, unique=True)  # e.g. AIB/20821/2022
+    full_name = models.CharField(max_length=200)
+    def __str__(self):
+        return f"{self.employee_id} - {self.full_name}"
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
     employee_id = models.CharField(max_length=50, unique=True)  # e.g. AIB/20821/2022
@@ -28,6 +32,10 @@ class Employee(models.Model):
             if date.today() < one_year_later:
                 return False
         return True
+    def delete(self, *args, **kwargs):
+        if self.user:
+            self.user.delete()  # delete linked User
+        super().delete(*args, **kwargs)
     
 class Job(models.Model):
     title = models.CharField(max_length=200)

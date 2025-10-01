@@ -2,7 +2,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, redirect, get_object_or_404
-from awash.models import Employee, Job, Application, Promotion
+from awash.models import Employee, Job, Application, Promotion, Allemployee_record
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -11,75 +11,90 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from datetime import timedelta
 from django.utils import timezone
-
 def get_employee(request):
-    emp_id = request.GET.get("employee_id")
-    try:
-        employee = Employee.objects.get(employee_id=emp_id)
-        # Check if the corresponding User exists
-        is_registered = employee.is_registered and User.objects.filter(username=employee.employee_id).exists()
-
-        return JsonResponse({
-            "full_name": employee.full_name,
-            "department": employee.department,
-            "email": employee.email,
-            "is_registered": is_registered
-        })
-    except Employee.DoesNotExist:
+    emp_id = request.GET.get("employee_id", "").strip()
+    if not emp_id:
         return JsonResponse({"error": "not_found"})
+
+    # Check Employee table
+    try:
+        emp = Employee.objects.get(employee_id=emp_id)
+
+        # If Employee exists but User does not exist, allow registration
+        if not emp.user or not User.objects.filter(username=emp.employee_id).exists():
+            emp.is_registered = False
+            emp.save()
+
+        if emp.is_registered:
+            return JsonResponse({"error": "already_registered"})
+        else:
+            return JsonResponse({
+                "full_name": emp.full_name,
+                "department": emp.position or "",
+                "email": emp.email or "",
+                "is_registered": False,
+            })
+
+    except Employee.DoesNotExist:
+        # Check Allemployee_record
+        try:
+            record = Allemployee_record.objects.get(employee_id=emp_id)
+            return JsonResponse({
+                "full_name": record.full_name,
+                "department": "",  # optional default
+                "email": "",       # optional
+                "is_registered": False,
+            })
+        except Allemployee_record.DoesNotExist:
+            return JsonResponse({"error": "not_found"})
+
 def home(request):
     return render(request, "awash/home.html")
 
 def register(request):
     if request.method == "POST":
-        employee_id = request.POST.get("employee_id")
+        employee_id = request.POST.get("employee_id").strip()
+        email = request.POST.get("email")
+        position = request.POST.get("position")
         password1 = request.POST.get("password1")
         password2 = request.POST.get("password2")
-        phone = request.POST.get("phone")
-        position = request.POST.get("position")
 
-        # Check password match
         if password1 != password2:
-            return render(request, "awash/register.html", {"error": "Passwords do not match"})
+            return render(request, "awash/register.html", {"error": "Passwords do not match", "positions": POSITION_LIST})
 
-        # Get employee
         try:
-            employee = Employee.objects.get(employee_id=employee_id)
-        except Employee.DoesNotExist:
-            return render(request, "awash/register.html", {"error": "Employee not found. Please contact HR."})
+            record = Allemployee_record.objects.get(employee_id=employee_id)
+        except Allemployee_record.DoesNotExist:
+            return render(request, "awash/register.html", {"error": "Employee not found. Contact HR.", "positions": POSITION_LIST})
 
-        # Reset is_registered if User deleted
-        if employee.is_registered and not User.objects.filter(username=employee.employee_id).exists():
-            employee.is_registered = False
-            employee.save()
+        # Check if Employee account already exists
+        employee, created = Employee.objects.get_or_create(employee_id=employee_id, defaults={
+            "full_name": record.full_name,
+            "position": position,
+            "email": email
+        })
 
-        # Check if already registered
         if employee.is_registered:
-            return render(request, "awash/register.html", {"error": "This employee is already registered. Contact HR."})
+            return render(request, "awash/register.html", {"has_account": True, "positions": POSITION_LIST})
 
-        # Create Django user
+        # Create Django User
         user = User.objects.create_user(
             username=employee.employee_id,
-            first_name=employee.full_name.split(" ")[0],
-            last_name=" ".join(employee.full_name.split(" ")[1:]),
-            password=password1
+            email=email,
+            password=password1,
+            first_name=employee.full_name.split()[0],
+            last_name=" ".join(employee.full_name.split()[1:])
         )
 
-        # Save phone if entered and not already present
-        if phone and not employee.phone:
-            employee.phone = phone
-
-        # Mark employee as registered
         employee.user = user
+        employee.position = position
+        employee.email = email
         employee.is_registered = True
         employee.save()
 
         return redirect("login")
-    context = {"positions": POSITION_LIST}
 
-    return render(request, "awash/register.html", context)
-
-
+    return render(request, "awash/register.html", {"positions": POSITION_LIST})
 def login_user(request):
     if request.method == "POST":
         employee_id = request.POST.get("employee_id")
@@ -333,20 +348,28 @@ def all_users(request):
         return redirect("login")
 
     employees = Employee.objects.select_related("user").all().order_by("full_name")
-    user = User.objects.all()
+    users = User.objects.all()  # rename variable to 'users' to avoid confusion
+
     context = {
         "employees": employees,
-        "user": user,
+        "users": users,
     }
     return render(request, "awash/users.html", context)
-
 def delete_user(request, id):
-    User_to_delete = get_object_or_404(User, id=id)
-    User_to_delete.delete()
-    messages.success(request, f"User '{User_to_delete.username}' has been deleted successfully.")
+    user_to_delete = get_object_or_404(User, id=id)
+    
+    # Check if this user has a linked Employee record
+    try:
+        employee = Employee.objects.get(user=user_to_delete)
+        employee.delete()  # delete the employee record
+    except Employee.DoesNotExist:
+        pass  # no linked employee, continue
+
+    username = user_to_delete.username
+    user_to_delete.delete()  # delete the user
+    messages.success(request, f"User '{username}' and linked employee record (if any) have been deleted successfully.")
 
     return redirect("users")
-
 
 def promotion(request):
     if not request.user.is_authenticated or not request.user.is_staff:
