@@ -424,3 +424,24 @@ def promotion_list(request):
 
     promotions = Promotion.objects.select_related("employee").order_by("-promoted_at")
     return render(request, "awash/promotion_list.html", {"promotions": promotions})
+
+
+def delete_promotion(request, id):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        messages.error(request, "You must be logged in as HR to perform this action.")
+        return redirect("login")
+
+    promotion = get_object_or_404(Promotion, id=id)
+    employee = promotion.employee
+    promotion.delete()
+
+    # Optionally, clear the last_promotion_date if this was the latest promotion
+    latest_promo = Promotion.objects.filter(employee=employee).order_by('-promoted_at').first()
+    if latest_promo:
+        employee.last_promotion_date = latest_promo.promoted_at
+    else:
+        employee.last_promotion_date = None
+    employee.save(update_fields=['last_promotion_date'])
+
+    messages.success(request, f"Promotion record for {employee.full_name} has been deleted.")
+    return redirect("promotion_list")

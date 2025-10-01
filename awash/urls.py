@@ -22,6 +22,7 @@ urlpatterns = [
     path('edit_job/<int:id>', views.edit_job, name='edit_job'),
     path('view_applicants_per_job/<int:id>', views.view_applicants_per_job, name='view_applicants_per_job'),
     path('apply/<int:id>', views.apply, name='apply'),
+    path('delete_promotion/<int:id>', views.delete_promotion, name='delete_promotion'),
     path("get-employee/", views.get_employee, name="get_employee"),  # new
 
 ]
