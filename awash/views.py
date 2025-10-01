@@ -60,7 +60,8 @@ def register(request):
         password2 = request.POST.get("password2")
 
         if password1 != password2:
-            return render(request, "awash/register.html", {"error": "Passwords do not match", "positions": POSITION_LIST})
+            messages.error(request, "Passwords do not match")
+            return render(request, "awash/register.html")
 
         try:
             record = Allemployee_record.objects.get(employee_id=employee_id)
@@ -91,6 +92,7 @@ def register(request):
         employee.email = email
         employee.is_registered = True
         employee.save()
+        messages.success(request, "Registration successful! You can now log in.")
 
         return redirect("login")
 
@@ -349,10 +351,11 @@ def all_users(request):
 
     employees = Employee.objects.select_related("user").all().order_by("full_name")
     users = User.objects.all()  # rename variable to 'users' to avoid confusion
-
+    employee_file = Allemployee_record.objects.all()
     context = {
         "employees": employees,
         "users": users,
+        "employee_file":employee_file
     }
     return render(request, "awash/users.html", context)
 def delete_user(request, id):

@@ -3,6 +3,14 @@
 {% block content %}
 <div class="container py-5">
     <h2 class="mb-4 text-center">All Users</h2>
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+        {% endif %}
 
     <table class="table table-striped table-hover shadow-sm rounded">
         <thead class="table-dark">
@@ -49,5 +57,29 @@
             {% endfor %}
         </tbody>
     </table>
+    <table>
+        <tr>
+            <th> bank employee name </th>
+            <th> ID </th>
+        </tr>
+        {% for i in employee_file %}
+        <tr>
+            <td>{{ i.employee_id  }}</td>
+            <td>{{ i.full_name  }}</td>
+        
+        </tr>
+        {% endfor %}
+    </table>
 </div>
+<script>
+  // Auto-dismiss after 3 seconds
+  setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      // Use Bootstrap's alert instance to close it
+      const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+      bsAlert.close();
+    });
+  }, 3000);
+</script>
 {% endblock %}

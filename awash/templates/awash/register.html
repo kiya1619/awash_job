@@ -43,6 +43,14 @@
       {% else %}
       <!-- Registration Form -->
       <div class="card shadow-lg p-4">
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+        {% endif %}
         <h3 class="text-center mb-4">Create Employee Account</h3>
 
         <form method="POST" id="account-form">
@@ -112,7 +120,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-const loginUrl = "{% url 'login' %}";
+const loginUrl = "{% url 'login' %}"; // URL for login page
 const employeeInput = document.getElementById("employee_id");
 const empMessage = document.getElementById("emp-message");
 const extraFields = document.getElementById("extra-fields");
@@ -122,6 +130,7 @@ const positionSelect = document.getElementById("position");
 const passwordInput = document.getElementById("password");
 const passwordStrength = document.getElementById("password-strength");
 
+// Event listener when employee ID loses focus
 employeeInput.addEventListener("blur", function() {
     const empId = this.value.trim();
     if(!empId) return;
@@ -142,13 +151,13 @@ employeeInput.addEventListener("blur", function() {
             empMessage.innerText = "";
             extraFields.style.display = "block";
 
-            // Fill values
-            fullNameInput.value = data.full_name || "";
-            emailInput.value = data.email || "";
-            positionSelect.value = data.department || "";
+            // Auto-fill values
+            if(fullNameInput) fullNameInput.value = data.full_name || "";
+            if(emailInput) emailInput.value = data.email || "";
+            if(positionSelect) positionSelect.value = data.department || "";
         }
     })
-    .catch(err => console.error(err));
+    .catch(err => console.error("Error fetching employee:", err));
 });
 
 // Password strength indicator
@@ -156,6 +165,7 @@ if(passwordInput){
     passwordInput.addEventListener("input", function() {
         const val = this.value;
         let width = 0, color = "bg-danger";
+
         if(val.length > 5) width = 40;
         if(val.length > 8) width = 70;
         if(val.length > 12) width = 100;
@@ -164,10 +174,13 @@ if(passwordInput){
         else if(width >= 40) color = "bg-warning";
         else color = "bg-danger";
 
-        passwordStrength.style.width = width + "%";
-        passwordStrength.className = "password-strength " + color;
+        if(passwordStrength){
+            passwordStrength.style.width = width + "%";
+            passwordStrength.className = "password-strength " + color;
+        }
     });
 }
 </script>
+
 </body>
 </html>
